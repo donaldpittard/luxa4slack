@@ -7,7 +7,7 @@ const RtmClient = require('@slack/client').RtmClient;
 const WebClient = require('@slack/client').WebClient;
 const RTM_EVENTS = require('@slack/client').RTM_EVENTS;
 const token = process.env.SLACK_API_TOKEN || '';
-const rtm = new RtmClient(token, {logLevel: process.env.RTM_LOG_LEVEL});
+const rtm = new RtmClient(token, {logLevel: process.env.RTM_LOG_LEVEL || 'none'});
 var web = new WebClient(token);
 
 var log = new Log(process.env.LOG || 'luxa4slack');
