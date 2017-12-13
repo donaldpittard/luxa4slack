@@ -12,20 +12,17 @@ npm install
 ```
 
 You will need to create a [legacy token](https://api.slack.com/custom-integrations/legacy-tokens) for the Slack API.
-Once you have the token, update the .env file the luxa4slack directory.
-```
-SLACK_API_TOKEN=[YOUR SLACK TOKEN HERE]
-```
-
-Now you will need to get your Slack User ID. The easiest way to do this is through the Slack Web Application.
+You will also need to get your Slack User ID. The easiest way to do this is through the Slack Web Application.
 Open up your messages, right click on your name, and click inspect.
 You will see an html link element with an attribute data-member-id.
-Once you get that update the .env file as follows:
+
+Once you have the API Token and the User ID, update the .env.sample file as follows:
 ```
+SLACK_API_TOKEN=[YOUR SLACK TOKEN HERE]
 SLACK_USER=[YOUR SLACK USER ID]
 ```
 
-Now you can run the app from within the luxa4slack directory.
+Change the .env.sample filename to .env, and run the app from within the luxa4slack directory.
 ```
 sudo node index.js
 ```
