@@ -12,7 +12,7 @@ var web = new WebClient(token);
 
 var log = new Log(process.env.LOG || 'luxa4slack');
 var device = new Luxafor();
-
+console.log(device);
 // Ensure that device is attached
 web.users.getPresenceAsync = promisify(web.users.getPresence);
 web.dnd.infoAsync = promisify(web.dnd.info);
@@ -47,6 +47,7 @@ setLuxColor();
 rtm.start();
 
 rtm.on(RTM_EVENTS.MESSAGE, (message) => {
+    console.log(message);
     web.dnd.infoAsync(process.env.SLACK_USER)
         .then((slack) => {
             if (slack.dnd_enabled) {
@@ -87,4 +88,14 @@ rtm.on(RTM_EVENTS.DND_UPDATED, (dndUpdatedEvent) => {
     if (dndUpdatedEvent.user === process.env.SLACK_USER) {
         setLuxColor();
     }
+});
+
+rtm.on(RTM_EVENTS.IM_MARKED, (slack) => {
+    console.log(slack);
+    setLuxColor();
+});
+
+rtm.on(RTM_EVENTS.CHANNEL_MARKED, (slack) => {
+    console.log(slack);
+    setLuxColor();
 });
