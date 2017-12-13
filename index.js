@@ -17,37 +17,53 @@ var device = new Luxafor();
 web.users.getPresenceAsync = promisify(web.users.getPresence);
 web.dnd.infoAsync = promisify(web.dnd.info);
 
-web.users.getPresenceAsync(process.env.SLACK_USER)
-    .then((slack) => {
-        if (slack.presence === 'away') {
-            device.fadeTo(LUX_CONFIG.yellow);
-            return;
-        } else {
-            return web.dnd.infoAsync(process.env.SLACK_USER);
-        }
-    })
-    .then ((slack) => {
-        if (!slack) return;
+var setLuxColor = function () {
+    web.users.getPresenceAsync(process.env.SLACK_USER)
+        .then((slack) => {
+            if (slack.presence === 'away') {
+                device.fadeTo(LUX_CONFIG.yellow);
+                return;
+            } else {
+                return web.dnd.infoAsync(process.env.SLACK_USER);
+            }
+        })
+        .then ((slack) => {
+            if (!slack) return;
 
-        if (slack.dnd_enabled) {
-            device.fadeTo(LUX_CONFIG.red);
-        } else {
-            device.fadeTo(LUX_CONFIG.green);
-        }
-    })
-    .catch((err) => {
-        console.log(err);
-        // exit
-    });
+            if (slack.dnd_enabled) {
+                device.fadeTo(LUX_CONFIG.red);
+            } else {
+                device.fadeTo(LUX_CONFIG.green);
+            }
+        })
+        .catch((err) => {
+            console.log(err);
+            // exit
+        });
+};
+
+setLuxColor();
 
 rtm.start();
 
 rtm.on(RTM_EVENTS.MESSAGE, (message) => {
-    if (message.user !== process.env.SLACK_USER) {
-        device.fadeTo(LUX_CONFIG.blue);
-    } else {
-        device.fadeTo(LUX_CONFIG.green);
-    }
+    web.dnd.infoAsync(process.env.SLACK_USER)
+        .then((slack) => {
+            if (slack.dnd_enabled) {
+                return;
+            }
+            
+            if (message.user !== process.env.SLACK_USER) {      
+                device.setColor(LUX_CONFIG.blue);
+                device.flash(LUX_CONFIG.blue, 255, 10, 5);
+            } else {
+                setLuxColor();
+            }
+        })
+        .catch((err) => {
+            console.log(err);
+            // Throw error
+        });
 });
 
 rtm.on(RTM_EVENTS.PRESENCE_CHANGE, (presenceChangeEvent) => {
@@ -55,17 +71,20 @@ rtm.on(RTM_EVENTS.PRESENCE_CHANGE, (presenceChangeEvent) => {
         if (presenceChangeEvent.presence === 'away') {
             device.fadeTo(LUX_CONFIG.yellow);
         } else if (presenceChangeEvent.presence === 'active') {
-            device.fadeTo(LUX_CONFIG.green);
+            web.dnd.infoAsync(process.env.SLACK_USER)
+                .then((slack) => {
+                    if (slack.dnd_enabled) {
+                        device.fadeTo(LUX_CONFIG.red);
+                    } else {
+                        device.fadeTo(LUX_CONFIG.green);                        
+                    }
+                });
         }
     }
 });
 
 rtm.on(RTM_EVENTS.DND_UPDATED, (dndUpdatedEvent) => {
     if (dndUpdatedEvent.user === process.env.SLACK_USER) {
-        if (dndUpdatedEvent.dnd_status.dnd_enabled) {
-            device.fadeTo(LUX_CONFIG.red);
-        } else {
-            device.fadeTo(LUX_CONFIG.green);
-        }
+        setLuxColor();
     }
 });
