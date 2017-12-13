@@ -43,11 +43,23 @@ web.users.getPresenceAsync(process.env.SLACK_USER)
 rtm.start();
 
 rtm.on(RTM_EVENTS.MESSAGE, (message) => {
-    if (message.user !== process.env.SLACK_USER) {
-        device.fadeTo(LUX_CONFIG.blue);
-    } else {
-        device.fadeTo(LUX_CONFIG.green);
-    }
+    web.dnd.infoAsync(process.env.SLACK_USER)
+        .then((slack) => {
+            if (slack.dnd_enabled) {
+                return;
+            }
+            
+            if (message.user !== process.env.SLACK_USER) {      
+                device.setColor(LUX_CONFIG.blue);
+                device.flash(LUX_CONFIG.blue, 255, 10, 5);
+            } else {
+                device.fadeTo(LUX_CONFIG.green);
+            }
+        })
+        .catch((err) => {
+            console.log(err);
+            // Throw error
+        });
 });
 
 rtm.on(RTM_EVENTS.PRESENCE_CHANGE, (presenceChangeEvent) => {
