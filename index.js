@@ -67,7 +67,14 @@ rtm.on(RTM_EVENTS.PRESENCE_CHANGE, (presenceChangeEvent) => {
         if (presenceChangeEvent.presence === 'away') {
             device.fadeTo(LUX_CONFIG.yellow);
         } else if (presenceChangeEvent.presence === 'active') {
-            device.fadeTo(LUX_CONFIG.green);
+            web.dnd.infoAsync(process.env.SLACK_USER)
+                .then((slack) => {
+                    if (slack.dnd_enabled) {
+                        device.fadeTo(LUX_CONFIG.red);
+                    } else {
+                        device.fadeTo(LUX_CONFIG.green);                        
+                    }
+                });
         }
     }
 });
