@@ -42,6 +42,8 @@ var setLuxColor = function () {
         });
 };
 
+setLuxColor();
+
 rtm.start();
 
 rtm.on(RTM_EVENTS.MESSAGE, (message) => {
