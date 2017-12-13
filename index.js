@@ -85,10 +85,6 @@ rtm.on(RTM_EVENTS.PRESENCE_CHANGE, (presenceChangeEvent) => {
 
 rtm.on(RTM_EVENTS.DND_UPDATED, (dndUpdatedEvent) => {
     if (dndUpdatedEvent.user === process.env.SLACK_USER) {
-        if (dndUpdatedEvent.dnd_status.dnd_enabled) {
-            device.fadeTo(LUX_CONFIG.red);
-        } else {
-            setLuxColor();
-        }
+        setLuxColor();
     }
 });
