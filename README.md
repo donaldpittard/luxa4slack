@@ -29,3 +29,9 @@ Now you can run the app from within the luxa4slack directory.
 ```
 sudo node index.js
 ```
+
+## TODO
+- [ ] Add logging
+- [ ] Add initialization messages
+- [ ] Electronify?
+- [ ] Test with Slack Desktop App
