@@ -16,13 +16,13 @@ You will also need to get your Slack User ID. The easiest way to do this is thro
 Open up your messages, right click on your name, and click inspect.
 You will see an html link element with an attribute data-member-id.
 
-Once you have the API Token and the User ID, update the .env.sample file as follows:
+Once you have the API Token and the User ID, create a .env file under app/config that contains the following:
 ```
 SLACK_API_TOKEN=[YOUR SLACK TOKEN HERE]
 SLACK_USER=[YOUR SLACK USER ID]
 ```
 
-Change the .env.sample filename to .env, and run the app from within the luxa4slack directory.
+Now you can run the application from within the luxa4slack directory:
 ```
 sudo node_modules/.bin/electron .
 ```
@@ -33,3 +33,4 @@ sudo node_modules/.bin/electron .
 - [ ] Add initialization messages
 - [X] Electronify
 - [ ] Test with Slack Desktop App
+- [ ] Add support for Windows
