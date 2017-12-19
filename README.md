@@ -24,11 +24,12 @@ SLACK_USER=[YOUR SLACK USER ID]
 
 Change the .env.sample filename to .env, and run the app from within the luxa4slack directory.
 ```
-sudo node index.js
+sudo node_modules/.bin/electron .
 ```
 
 ## TODO
+- [ ] Add user authentication
 - [ ] Add logging
 - [ ] Add initialization messages
-- [ ] Electronify?
+- [X] Electronify
 - [ ] Test with Slack Desktop App
