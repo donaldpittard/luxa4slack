@@ -1,41 +1,41 @@
-const path = require('path');
-const nativeImage = require('electron').nativeImage
-const Luxafor = require('luxafor-api');
+const path = require("path");
+const nativeImage = require("electron").nativeImage;
+const Luxafor = require("luxafor-api");
 const Colors = {
-    red:    "#FF0000",
-    green:  "#00FF00",
-    blue:   "#0000FF",
+    red: "#FF0000",
+    green: "#00FF00",
+    blue: "#0000FF",
     yellow: "#FFFF00",
-    black:  "#000000"
+    black: "#000000"
 };
 
 const Icons = {
-    available: path.join(__dirname, '../icons/lux_avail.png'), 
-    away:      path.join(__dirname, '../icons/lux_away.png'),
-    dnd:       path.join(__dirname, '../icons/lux_dnd.png'),
-    notify:    path.join(__dirname, '../icons/lux_msg.png'),
-    off:       path.join(__dirname, '../icons/lux_off.png')
+    available: path.join(__dirname, "../icons/lux_avail.png"),
+    away: path.join(__dirname, "../icons/lux_away.png"),
+    dnd: path.join(__dirname, "../icons/lux_dnd.png"),
+    notify: path.join(__dirname, "../icons/lux_msg.png"),
+    off: path.join(__dirname, "../icons/lux_off.png")
 };
 
 /**
- * This class wraps the luxafor-api to expose an API for the 
+ * This class wraps the luxafor-api to expose an API for the
  * Slack module to use. It handles manipulation of the colors
  * and tray icon for the app.
  */
 class Luxa4Slack extends Luxafor {
-    constructor (tray) {
+    constructor(tray) {
         super();
 
         if (!tray) {
-            throw('Error: No Tray object supplied!');
+            throw "Error: No Tray object supplied!";
         }
 
         this.tray = tray;
-        
+
         if (this.device instanceof Error) {
             console.log(this);
             console.log("ERROR: Device Failed");
-            throw('Luxafor failed to initialize!');
+            throw "Luxafor failed to initialize!";
         }
 
         this.off();
@@ -46,8 +46,7 @@ class Luxa4Slack extends Luxafor {
      * in Colors. Updates the tray icon to the available icon picture
      * as specified in Icons.
      */
-    setAvailable () {
-        console.log('Setting luxafor to available');
+    setAvailable() {
         this.tray.setImage(Icons.available);
         this.fadeTo(Colors.green);
     }
@@ -57,8 +56,7 @@ class Luxa4Slack extends Luxafor {
      * in Colors. Updates the tray icon to the do not disturb icon picture
      * as specified in Icons.
      */
-    setDnd () {
-        console.log('Setting DND on luxafor');
+    setDnd() {
         this.tray.setImage(Icons.dnd);
         this.fadeTo(Colors.red);
     }
@@ -67,18 +65,17 @@ class Luxa4Slack extends Luxafor {
      * Sets the luxafor device to the away color as defined in Colors.
      * Updates the tray icon to the away icon picture specified in Icons.
      */
-    setAway () {
-        console.log('Setting Luxafor to away');
+    setAway() {
         this.tray.setImage(Icons.away);
         this.fadeTo(Colors.yellow);
     }
 
     /**
-     * Makes the luxafor blink and sets the luxafor device to 
+     * Makes the luxafor blink and sets the luxafor device to
      * the notify color as defined in Colors.
      * Sets the tray icon to the picture specified in Icons.
      */
-    notify () {
+    notify() {
         let target = 255;
         let speed = 10;
         let repeat = 5;
@@ -92,8 +89,7 @@ class Luxa4Slack extends Luxafor {
      * Turns the luxafor device off. Sets
      * the tray icon to the picture specified in Icons.
      */
-    off () {
-        console.log('Turning luxafor off');
+    off() {
         this.tray.setImage(Icons.off);
         this.fadeTo(Colors.black);
     }
