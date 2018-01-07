@@ -185,6 +185,10 @@ class Slack {
         let status_text = "";
         let status_emoji = "";
 
+        if (!this.updateStatus) {
+            return;
+        }
+
         if (status === "available") {
             this.status = "available";
             status_emoji = ":luxafor-avail:";
