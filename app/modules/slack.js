@@ -78,9 +78,15 @@ class Slack {
      * @param {*} message
      */
     handleMessageEvent(message) {
-        if (message.user !== this.user) {
-            this.luxa4slack.notify();
+        if (message.user === this.user) {
+            return;
         }
+
+        this.webClient.dnd.info(this.user, (err, slack) => {
+            if (!slack.dnd_enabled) {
+                this.luxa4slack.notify();
+            }
+        });
     }
 
     /**
