@@ -162,7 +162,7 @@ class Slack {
                 throw err;
             }
 
-            if (!slack.user === this.user) {
+            if (slack.user !== this.user) {
                 return;
             }
 
