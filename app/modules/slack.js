@@ -78,6 +78,8 @@ class Slack {
      * @param {*} message
      */
     handleMessageEvent(message) {
+        console.log("Handling message event");
+        console.log(message);
         if (message.user === this.user) {
             return;
         }
@@ -96,6 +98,10 @@ class Slack {
      * @param {*} slack
      */
     handlePresenceChangeEvent(slack) {
+        console.log("Handling presence change event");
+        console.log(slack);
+        console.log(this);
+        
         if (slack.user !== this.user) {
             return;
         }
@@ -123,6 +129,9 @@ class Slack {
      * @param {*} slack
      */
     handleDndUpdatedEvent(slack) {
+        console.log("Handling DND update event");
+        console.log(slack);
+        
         if (slack.user !== this.user) {
             return;
         }
@@ -140,6 +149,9 @@ class Slack {
      * @param {*} event
      */
     handleImMarkedEvent(event) {
+        console.log("Handling IM Marked Event");
+        console.log(event);
+        
         this.setLuxPresenceOrDndColor();
     }
 
@@ -148,6 +160,9 @@ class Slack {
      * @param {*} event
      */
     handleChannelMarkedEvent(event) {
+        console.log("Handling Channel Marked Event");
+        console.log(event);
+        
         this.setLuxPresenceOrDndColor();
     }
 
@@ -157,13 +172,14 @@ class Slack {
      * available.
      */
     setLuxPresenceOrDndColor() {
+        console.log("Setting lux presence or dnd color");
+        
         this.webClient.users.getPresence(this.user, (err, slack) => {
+            console.log("Retrieved presence");
+            console.log(slack);
+            
             if (err) {
                 throw err;
-            }
-
-            if (slack.user !== this.user) {
-                return;
             }
 
             if (slack.presence === "away") {
