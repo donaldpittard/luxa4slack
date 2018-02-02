@@ -13,6 +13,15 @@ let slack = null;
 app.on("ready", () => {
     try {
         appIcon = new Tray(Luxa4Slack.icons.available);
+        
+        const menu = Menu.buildFromTemplate([
+            {
+                label: "Close", 
+                click: () => app.quit()
+            }
+        ]);
+        appIcon.setContextMenu(menu);
+
         luxa4slack = new Luxa4Slack(appIcon);
         slack = new Slack({
             apiToken: process.env.SLACK_API_TOKEN,
