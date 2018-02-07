@@ -6,3 +6,5 @@ package-lock.json
 
 # Node Modules
 node_modules/
+
+build
