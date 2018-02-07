@@ -1,6 +1,13 @@
+const promisify = require("promisify-node");
 const RtmClient = require("@slack/client").RtmClient;
 const WebClient = require("@slack/client").WebClient;
 const RTM_EVENTS = require("@slack/client").RTM_EVENTS;
+
+const STATUS = {
+    active: "active",
+    away: "away",
+    doNotDisturb: "dnd"
+};
 
 /**
  * This class wraps the logic for handling real time messaging (RTM) events
@@ -12,7 +19,7 @@ class Slack {
      * Creates a new instance of the Slack wrapper class.
      * The constructor expects a configuration object that
      * specifies a Slack API Token, a Slack User Id, and a
-     * luxa4slack instance.
+     * events bus.
      * @param {*} config
      */
     constructor(config) {
@@ -24,16 +31,12 @@ class Slack {
             throw "No User ID provided!";
         }
 
-        if (!config.luxa4slack) {
-            throw "No luxafor was provided for slack to use!";
-        }
-
         this.user = config.user;
         this.rtmClient = new RtmClient(config.apiToken, {
             logLevel: config.logLevel
         });
         this.webClient = new WebClient(config.apiToken);
-        this.luxa4slack = config.luxa4slack;
+        this.events = config.events;
         this.updateStatus = config.updateStatus || false;
 
         try {
@@ -42,8 +45,24 @@ class Slack {
             throw err;
         }
 
-        this.setLuxPresenceOrDndColor();
+        this.fetchSlackPrenceAndDndInfo();
         this.attachMessageHandlers();
+    }
+
+    asyncFetchSlackPresence() {
+        const getStatus = promisify(this.webClient.users.getPresence).bind(
+            this.webClient.users
+        );
+
+        return getStatus(this.user);
+    }
+
+    asyncFetchDnd() {
+        const getDnd = promisify(this.webClient.dnd.info).bind(
+            this.webClient.dnd
+        );
+
+        return getDnd(this.user);
     }
 
     /**
@@ -54,18 +73,22 @@ class Slack {
             RTM_EVENTS.MESSAGE,
             this.handleMessageEvent.bind(this)
         );
+
         this.rtmClient.on(
-            RTM_EVENTS.PRESENCE_CHANGE,
+            RTM_EVENTS.MANUAL_PRESENCE_CHANGE,
             this.handlePresenceChangeEvent.bind(this)
         );
+
         this.rtmClient.on(
             RTM_EVENTS.DND_UPDATED,
             this.handleDndUpdatedEvent.bind(this)
         );
+
         this.rtmClient.on(
             RTM_EVENTS.IM_MARKED,
             this.handleImMarkedEvent.bind(this)
         );
+
         this.rtmClient.on(
             RTM_EVENTS.CHANNEL_MARKED,
             this.handleChannelMarkedEvent.bind(this)
@@ -84,11 +107,7 @@ class Slack {
             return;
         }
 
-        this.webClient.dnd.info(this.user, (err, slack) => {
-            if (!slack.dnd_enabled) {
-                this.luxa4slack.notify();
-            }
-        });
+        this.events.emit("slack-message-received", message);
     }
 
     /**
@@ -99,27 +118,12 @@ class Slack {
      */
     handlePresenceChangeEvent(slack) {
         console.log("Handling presence change event");
-        console.log(slack);
-        console.log(this);
-        
-        if (slack.user !== this.user) {
-            return;
+        if (!slack.presence) {
+            // Throw an error here
         }
 
-        if (slack.presence === "away") {
-            this.luxa4slack.setAway();
-            this.setStatus("away");
-        } else {
-            this.webClient.dnd.info(this.user, (err, slack) => {
-                if (slack.dnd_enabled) {
-                    this.luxa4slack.setDnd();
-                    this.setStatus("dnd");
-                } else {
-                    this.luxa4slack.setAvailable();
-                    this.setStatus("available");
-                }
-            });
-        }
+        this.events.emit("slack-presence-changed", slack.presence);
+        this.setStatus(slack.presence);
     }
 
     /**
@@ -131,17 +135,7 @@ class Slack {
     handleDndUpdatedEvent(slack) {
         console.log("Handling DND update event");
         console.log(slack);
-        
-        if (slack.user !== this.user) {
-            return;
-        }
-
-        if (slack.dnd_status.dnd_enabled) {
-            this.luxa4slack.setDnd();
-            this.setStatus("dnd");
-        } else {
-            this.setLuxPresenceOrDndColor();
-        }
+        this.fetchSlackPrenceAndDndInfo();
     }
 
     /**
@@ -151,8 +145,7 @@ class Slack {
     handleImMarkedEvent(event) {
         console.log("Handling IM Marked Event");
         console.log(event);
-        
-        this.setLuxPresenceOrDndColor();
+        this.fetchSlackPrenceAndDndInfo();
     }
 
     /**
@@ -162,48 +155,39 @@ class Slack {
     handleChannelMarkedEvent(event) {
         console.log("Handling Channel Marked Event");
         console.log(event);
-        
-        this.setLuxPresenceOrDndColor();
+        this.fetchSlackPrenceAndDndInfo();
     }
 
     /**
-     * Checks the user's presence for away. If the user is not away, then the user's
-     * dnd status is checked. If dnd is not active, then the luxafor is updated for
-     * available.
+     * Checks the user's presence for away. If the user's presence is away, a presence changed
+     * event is emitted with presence away. If the presence is not away, the do not disturb
+     * info is queried. If do not disturb is enabled, then the slack-dnd-enabled event is
+     * emitted. Otherwise a presence change event is emitted with the active presence.
      */
-    setLuxPresenceOrDndColor() {
-        console.log("Setting lux presence or dnd color");
-        
-        this.webClient.users.getPresence(this.user, (err, slack) => {
-            console.log("Retrieved presence");
-            console.log(slack);
-            
-            if (err) {
-                throw err;
-            }
-
-            if (slack.presence === "away") {
-                this.luxa4slack.setAway();
-                this.setStatus("away");
-            } else {
-                this.webClient.dnd.info(this.user, (err, slack) => {
-                    if (err) {
-                        throw err;
-                    }
-
-                    if (slack.dnd_enabled) {
-                        this.luxa4slack.setDnd();
-                        this.setStatus("dnd");
-                    } else {
-                        this.luxa4slack.setAvailable();
-                        this.setStatus("available");
-                    }
-                });
-            }
-        });
+    fetchSlackPrenceAndDndInfo() {
+        this.asyncFetchSlackPresence()
+            .then(slack => {
+                if (slack.presence === STATUS.away) {
+                    this.events.emit("slack-presence-changed", slack.presence);
+                    this.setStatus(STATUS.away).bind(this);
+                } else {
+                    return this.asyncFetchDnd().bind(this);
+                }
+            })
+            .then(slack => {
+                if (slack.dnd_enabled) {
+                    this.events.emit("slack-dnd-enabled");
+                    this.setStatus(STATUS.doNotDisturb);
+                } else {
+                    this.events.emit("slack-presence-changed", STATUS.active);
+                    this.setStatus(STATUS.active);
+                }
+            })
+            .bind(this);
     }
 
     setStatus(status) {
+        console.log("Setting status", status);
         let status_text = "";
         let status_emoji = "";
 
@@ -211,14 +195,14 @@ class Slack {
             return;
         }
 
-        if (status === "available") {
-            this.status = "available";
+        if (status === STATUS.active) {
+            this.status = STATUS.active;
             status_emoji = ":luxafor-avail:";
-        } else if (status === "away") {
-            this.status = "away";
+        } else if (status === STATUS.away) {
+            this.status = STATUS.away;
             status_emoji = ":luxafor-away:";
-        } else if (status === "dnd") {
-            this.status = "dnd";
+        } else if (status === STATUS.doNotDisturb) {
+            this.status = STATUS.doNotDisturb;
             status_emoji = ":luxafor-dnd:";
         } else {
             return;

@@ -23,22 +23,55 @@ const Icons = {
  * and tray icon for the app.
  */
 class Luxa4Slack extends Luxafor {
-    constructor(tray) {
+    constructor(tray, events) {
         super();
 
         if (!tray) {
             throw "Error: No Tray object supplied!";
         }
 
+        if (!events) {
+            throw "Error: No event bus pass!";
+        }
+
         this.tray = tray;
+        this.events = events;
 
         if (this.device instanceof Error) {
-            console.log(this);
+            console.log(this.device);
             console.log("ERROR: Device Failed");
-            throw "Luxafor failed to initialize!";
         }
 
         this.off();
+        this.listen();
+    }
+
+    listen() {
+        this.events.on("app-closed", this.off.bind(this));
+        this.events.on("slack-message-recieved", this.notify.bind(this));
+        this.events.on(
+            "slack-presence-changed",
+            this.handlePresenceChange.bind(this)
+        );
+        this.events.on("slack-dnd-enabled", this.setDnd.bind(this));
+    }
+
+    /**
+     * Given a string representing the slack user's presence
+     * this function changes the luxafor's color
+     * @param string presence
+     */
+    handlePresenceChange(presence) {
+        switch (presence) {
+            case "away":
+                this.setAway();
+                break;
+            case "active":
+                this.setAvailable();
+                break;
+            default:
+                throw "Error: Invalid status passed to presence change handler!";
+        }
     }
 
     /**

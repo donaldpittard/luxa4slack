@@ -13,7 +13,8 @@
     "@slack/client": "^3.14.2",
     "dotenv": "^4.0.0",
     "electron": "latest",
-    "luxafor-api": "latest"
+    "luxafor-api": "latest",
+    "promisify-node": "^0.4.0"
   },
   "devDependencies": {
     "electron-rebuild": "latest"
