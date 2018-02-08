@@ -31,7 +31,7 @@ class Luxa4Slack extends Luxafor {
         }
 
         if (!events) {
-            throw "Error: No event bus pass!";
+            throw "Error: No event bus passed!";
         }
 
         this.tray = tray;
@@ -48,7 +48,7 @@ class Luxa4Slack extends Luxafor {
 
     listen() {
         this.events.on("app-closed", this.off.bind(this));
-        this.events.on("slack-message-recieved", this.notify.bind(this));
+        this.events.on("slack-message-received", this.notify.bind(this));
         this.events.on(
             "slack-presence-changed",
             this.handlePresenceChange.bind(this)
