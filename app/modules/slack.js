@@ -165,25 +165,25 @@ class Slack {
      * emitted. Otherwise a presence change event is emitted with the active presence.
      */
     fetchSlackPrenceAndDndInfo() {
-        this.asyncFetchSlackPresence()
+        let self = this;
+        self.asyncFetchSlackPresence()
             .then(slack => {
                 if (slack.presence === STATUS.away) {
-                    this.events.emit("slack-presence-changed", slack.presence);
-                    this.setStatus(STATUS.away).bind(this);
+                    self.events.emit("slack-presence-changed", slack.presence);
+                    self.setStatus(STATUS.away).bind(self);
                 } else {
-                    return this.asyncFetchDnd().bind(this);
+                    return self.asyncFetchDnd().bind(self);
                 }
             })
             .then(slack => {
                 if (slack.dnd_enabled) {
-                    this.events.emit("slack-dnd-enabled");
-                    this.setStatus(STATUS.doNotDisturb);
+                    self.events.emit("slack-dnd-enabled");
+                    self.setStatus(STATUS.doNotDisturb);
                 } else {
-                    this.events.emit("slack-presence-changed", STATUS.active);
-                    this.setStatus(STATUS.active);
+                    self.events.emit("slack-presence-changed", STATUS.active);
+                    self.setStatus(STATUS.active);
                 }
-            })
-            .bind(this);
+            });
     }
 
     setStatus(status) {
