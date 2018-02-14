@@ -93,6 +93,18 @@ class Slack {
             RTM_EVENTS.CHANNEL_MARKED,
             this.handleChannelMarkedEvent.bind(this)
         );
+
+        this.rtmClient.on(
+            RTM_EVENTS.GROUP_MARKED,
+            this.handleGroupMarkedEvent.bind(this)
+        );
+    }
+
+    handleGroupMarkedEvent(slack) {
+        console.log('Handling group marked event!');
+        console.log(slack);
+
+        this.fetchSlackPrenceAndDndInfo();
     }
 
     /**
@@ -166,24 +178,28 @@ class Slack {
      */
     fetchSlackPrenceAndDndInfo() {
         let self = this;
+
         self.asyncFetchSlackPresence()
             .then(slack => {
+                console.log(slack);
                 if (slack.presence === STATUS.away) {
                     self.events.emit("slack-presence-changed", slack.presence);
-                    self.setStatus(STATUS.away).bind(self);
+                    self.setStatus(STATUS.away)
                 } else {
-                    return self.asyncFetchDnd().bind(self);
+                    self.asyncFetchDnd()
+                        .then(slack => {
+                            console.log(slack);
+                            if (slack.dnd_enabled) {
+                                self.events.emit("slack-dnd-enabled");
+                                self.setStatus(STATUS.doNotDisturb);
+                            } else {
+                                self.events.emit("slack-presence-changed", STATUS.active);
+                                self.setStatus(STATUS.active);
+                            }
+                        });
                 }
             })
-            .then(slack => {
-                if (slack.dnd_enabled) {
-                    self.events.emit("slack-dnd-enabled");
-                    self.setStatus(STATUS.doNotDisturb);
-                } else {
-                    self.events.emit("slack-presence-changed", STATUS.active);
-                    self.setStatus(STATUS.active);
-                }
-            });
+            
     }
 
     setStatus(status) {
