@@ -1,4 +1,4 @@
-class Events {
+class EventBus {
     constructor() {
         this._events = {};
     }
@@ -20,4 +20,4 @@ class Events {
     }
 }
 
-module.exports = Events;
+module.exports = EventBus;

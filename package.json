@@ -14,6 +14,7 @@
     "dotenv": "^4.0.0",
     "electron": "latest",
     "luxafor-api": "latest",
+    "node-hid": "^0.7.2",
     "promisify-node": "^0.4.0"
   },
   "devDependencies": {
