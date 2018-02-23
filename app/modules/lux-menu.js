@@ -1,5 +1,11 @@
 const { Menu, MenuItem } = require("electron");
 const nativeImage = require("electron").nativeImage;
+const PRESENCE_LABELS = {
+    available: "Available",
+    away: "Away from my desk",
+    dnd: "Do not disturb",
+    inactive: "Inactive"
+};
 
 /**
  * This class manages the Luxafor Menu. It allows a user
@@ -12,7 +18,7 @@ class LuxMenu extends Menu {
         super();
 
         this.append(new MenuItem({
-            label: "Available", 
+            label: PRESENCE_LABELS.available, 
             type: "radio", 
             click(){
                 eventBus.emit("presence-available");
@@ -20,7 +26,7 @@ class LuxMenu extends Menu {
         }));
 
         this.append(new MenuItem({
-            label: "Away from my desk", 
+            label: PRESENCE_LABELS.away, 
             type: "radio", 
             click(){
                 eventBus.emit("presence-away");
@@ -28,7 +34,7 @@ class LuxMenu extends Menu {
         }));
 
         this.append(new MenuItem({
-            label: "Do Not Disturb", 
+            label: PRESENCE_LABELS.dnd, 
             type: "radio",
             click(){
                 eventBus.emit("presence-dnd");
@@ -36,7 +42,7 @@ class LuxMenu extends Menu {
         }));
 
         this.append(new MenuItem({
-            label: 'Inactive',
+            label: PRESENCE_LABELS.inactive,
             type: "radio",
             checked: true,
             click(){
@@ -54,13 +60,27 @@ class LuxMenu extends Menu {
 
         eventBus.on("presence-available", () => {
             self.items.forEach((menuItem) => {
-                if (menuItem.label === "Available") {
-                    console.log(menuItem);
-                    console.log("Found available menu item");
-                    menuItem.checked = 1;
+                if (menuItem.label === PRESENCE_LABELS.available) {
+                    menuItem.checked = true;
                 }
             });
         });
+
+        eventBus.on("presence-away", () => {
+            self.items.forEach((menuItem) => {
+                if (menuItem.label === PRESENCE_LABELS.away) {
+                    menuItem.checked = true;
+                }
+            });
+        });
+
+        eventBus.on("presence-dnd", () => {
+            self.items.forEach((menuItem) => {
+                if (menuItem.label === PRESENCE_LABELS.dnd) {
+                    menuItem.checked = true;
+                }
+            });
+        })
     }
 }
 

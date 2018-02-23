@@ -24,6 +24,9 @@ app.on("ready", () => {
         menu = new LuxMenu(events);
 
         events.on("app-closed", app.quit);
+        events.on("presence-available", () => {appIcon.setContextMenu(menu);});
+        events.on("presence-away", () => {appIcon.setContextMenu(menu);});
+        events.on("presence-dnd", () => {appIcon.setContextMenu(menu);});
         appIcon.setContextMenu(menu);
 
         luxa4slack = new Luxa4Slack(events);
