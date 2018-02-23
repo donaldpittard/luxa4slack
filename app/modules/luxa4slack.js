@@ -25,6 +25,7 @@ class Luxa4Slack extends Luxafor {
             throw "Error: No event bus passed!";
         }
 
+        this.fadeTo(Colors.black);
         this.events(eventBus);
     }
 
@@ -35,18 +36,25 @@ class Luxa4Slack extends Luxafor {
         let self = this;
         eventBus.on("app-closed", () => self.fadeTo(Colors.black));
 
-        eventBus.on("slack-message-received", () => {
+        eventBus.on("message-received", () => {
             self.setColor(Colors.blue);
             self.flash(Colors.blue, 255, 10, 5);
         });
 
-        eventBus.on("slack-dnd-enabled", () => self.fadeTo(Colors.red));
-        eventBus.on("slack-presence-changed", (presence) => {
-            if (presence === "away") {
-                self.fadeTo(Colors.yellow);
-            } else if (presence === "active") {
-                self.fadeTo(Colors.green);
-            }
+        eventBus.on("presence-available", () => {
+            self.fadeTo(Colors.green);
+        });
+
+        eventBus.on("presence-away", () => {
+            self.fadeTo(Colors.yellow);
+        });
+
+        eventBus.on("presence-dnd", () => {
+            self.fadeTo(Colors.red);
+        });
+
+        eventBus.on("presence-inactive", () => {
+            self.fadeTo(Colors.black);
         });
     }
 }

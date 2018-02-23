@@ -5,6 +5,7 @@ const dotenv = require("dotenv").config({
 const { app, Menu, Tray } = require("electron");
 const Luxa4Slack = require("./modules/luxa4slack");
 const LuxIcon = require("./modules/lux-icon");
+const LuxMenu = require("./modules/lux-menu");
 const EventBus = require("./modules/event-bus");
 const Slack = require("./modules/slack");
 
@@ -12,27 +13,21 @@ let appIcon = null;
 let luxa4slack = null;
 let slack = null;
 let events = null;
+let menu = null;
 
 app.on("ready", () => {
     try {
         events = new EventBus();
         appIcon = new LuxIcon(events);
+        menu = new LuxMenu(events);
 
-        const menu = Menu.buildFromTemplate([
-            {
-                label: "Close",
-                click: () => {
-                    events.emit("app-closed");
-                    app.quit();
-                }
-            }
-        ]);
+        events.on("app-closed", app.quit);
         appIcon.setContextMenu(menu);
 
         luxa4slack = new Luxa4Slack(events);
         slack = new Slack({
             apiToken: process.env.SLACK_API_TOKEN,
-            events: events,
+            eventBus: events,
             logLevel: process.env.RTM_LOG_LEVEL,
             updateStatus: process.env.UPDATE_STATUS
         });
