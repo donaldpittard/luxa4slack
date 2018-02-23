@@ -54,10 +54,10 @@ class LuxMenu extends Menu {
 
         eventBus.on("presence-available", () => {
             self.items.forEach((menuItem) => {
-                console.log(menuItem);
                 if (menuItem.label === "Available") {
+                    console.log(menuItem);
                     console.log("Found available menu item");
-                    menuItem.click();
+                    menuItem.checked = 1;
                 }
             });
         });
