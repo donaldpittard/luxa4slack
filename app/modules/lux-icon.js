@@ -1,5 +1,7 @@
-const {Tray} = require("electron");
+const { Tray } = require("electron");
 const path = require("path");
+
+// Icon file paths
 const icons = {
     available: path.join(__dirname, "../icons/lux_avail.png"),
     away: path.join(__dirname, "../icons/lux_away.png"),
@@ -9,7 +11,9 @@ const icons = {
 };
 
 /** 
- * Luxafor Tray Icon class
+ * This class manages what icon will appear in the user's tray.
+ * The class listens for presence change events and updates 
+ * the tray icon image appropriately.
  */
 class LuxIcon extends Tray {
     constructor(eventBus){
@@ -20,7 +24,9 @@ class LuxIcon extends Tray {
     }
 
     /**
-     * Attaches event handlers to event bus.
+     * Given an event bus, this method subscribes the instance
+     * to presence change events.
+     * @param {*} eventBus 
      */
     events(eventBus) {
         let self = this;

@@ -1,9 +1,11 @@
 const { Menu, MenuItem } = require("electron");
 const nativeImage = require("electron").nativeImage;
-const LuxIcon = require("./lux-icon");
 
 /**
- * Allows user to switch luxafor status via menu bar
+ * This class manages the Luxafor Menu. It allows a user
+ * to manage their Slack status and luxafor color from the tray
+ * by emitting presence change events when the user clicks 
+ * on a different presence.
  */
 class LuxMenu extends Menu {
     constructor(eventBus){
@@ -43,21 +45,6 @@ class LuxMenu extends Menu {
         }));
 
         this.append(new MenuItem({label: 'Close', click(){eventBus.emit("app-closed");}}));
-        this.subscribeToEvents(eventBus);
-    }
-
-    subscribeToEvents(eventBus) {
-        let self = this;
-
-        eventBus.on("presence-available", () => {
-            console.log("Changing presence menu item");
-            self.items.forEach(menuItem => {
-                console.log(menuItem);
-                if (menuItem.label === "Available") {
-                    menuItem.checked = true;
-                }
-            });
-        });
     }
 }
 

@@ -8,9 +8,11 @@ const Colors = {
 };
 
 /**
- * This class wraps the luxafor-api to expose an API for the
- * Slack module to use. It handles manipulation of the colors
- * and tray icon for the app.
+ * This class manages the luxafor color by wrapping the Luxafor API.
+ * The object will subscribe to message received and presence changed 
+ * events. Based on these events, it will change the Luxafor color
+ * appropriately. For more information on the Luxafor API go to
+ * https://www.npmjs.com/package/luxafor-api
  */
 class Luxa4Slack extends Luxafor {
     constructor(eventBus){
@@ -30,7 +32,8 @@ class Luxa4Slack extends Luxafor {
     }
 
     /** 
-     * Attach event handlers to event bus
+     * This method subscribes the instance to message received, and 
+     * presence changed events in order to change the Luxafor color.
      */
     events(eventBus){
         let self = this;

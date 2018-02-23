@@ -1,11 +1,13 @@
 const { RtmClient, CLIENT_EVENTS, RTM_EVENTS } = require('@slack/client');
-const { WebClient } = require('@slack/client');
 const appData = {};
 
 /**
- * This class wraps the logic for handling real time messaging (RTM) events
- * from the slack API. It also handles making calls to the slack API to fetch
- * the current user's presence and do not disturb (dnd) status.
+ * This class uses Slack's Real-time Messaging (RTM) API to listen
+ * for events. We want to listen for Slack presence change events,
+ * Slack message received events, and read marker update events.
+ * Given these events, the class will emit presence change or 
+ * message received events. For more information go to
+ * http://slackapi.github.io/node-slack-sdk/rtm_api
  */
 class Slack {
     constructor(config){
@@ -27,12 +29,15 @@ class Slack {
         });
 
         this.rtmEvents(rtm, config.eventBus);
-
         rtm.start({
             batch_presence_away: true
         });
     }
 
+    /**
+     * This function subscribes the instance to RTM events and
+     * emits presence changed and message received events appropriately.
+     */
     rtmEvents(rtm, eventBus) {
         rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, (connectData) => {
             console.log(connectData);
@@ -64,6 +69,21 @@ class Slack {
                 console.log("Emitting away presence");
                 eventBus.emit("presence-away");
             }
+        });
+
+        // When an instant message read marker is updated
+        rtm.on(RTM_EVENTS.IM_MARKED, (event) => {
+            console.log(event);
+            // If we've read all our messages, then we are assumed to be available.
+            if (event.unread_count_display === 0) {
+                eventBus.emit("presence-available");
+            } 
+        });
+
+        // When a channel read marker is updated
+        rtm.on(RTM_EVENTS.CHANNEL_MARKED, (event) => {
+            console.log(event);
+
         });
     }
 }
