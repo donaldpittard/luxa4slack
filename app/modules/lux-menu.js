@@ -55,6 +55,11 @@ class LuxMenu extends Menu {
         this.subscribeToEvents(eventBus);
     }
 
+    /**
+     * This method subscribes the instance to presence change events and
+     * sets the checked value of the appropriate menu item on the event.
+     * @param {*} eventBus 
+     */
     subscribeToEvents(eventBus) {
         var self = this;
 
