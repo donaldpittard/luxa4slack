@@ -45,6 +45,22 @@ class LuxMenu extends Menu {
         }));
 
         this.append(new MenuItem({label: 'Close', click(){eventBus.emit("app-closed");}}));
+        
+        this.subscribeToEvents(eventBus);
+    }
+
+    subscribeToEvents(eventBus) {
+        var self = this;
+
+        eventBus.on("presence-available", () => {
+            self.items.forEach((menuItem) => {
+                console.log(menuItem);
+                if (menuItem.label === "Available") {
+                    console.log("Found available menu item");
+                    menuItem.click();
+                }
+            });
+        });
     }
 }
 

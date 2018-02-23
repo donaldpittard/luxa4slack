@@ -71,7 +71,6 @@ class Slack {
             }
         });
 
-        // When an instant message read marker is updated
         rtm.on(RTM_EVENTS.IM_MARKED, (event) => {
             console.log(event);
             // If we've read all our messages, then we are assumed to be available.
@@ -80,10 +79,9 @@ class Slack {
             } 
         });
 
-        // When a channel read marker is updated
         rtm.on(RTM_EVENTS.CHANNEL_MARKED, (event) => {
             console.log(event);
-
+            eventBus.emit("presence-available");
         });
     }
 }
