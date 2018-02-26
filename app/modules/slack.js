@@ -1,235 +1,120 @@
-const promisify = require("promisify-node");
-const RtmClient = require("@slack/client").RtmClient;
-const WebClient = require("@slack/client").WebClient;
-const RTM_EVENTS = require("@slack/client").RTM_EVENTS;
-
-const STATUS = {
-    active: "active",
-    away: "away",
-    doNotDisturb: "dnd"
-};
+const { RtmClient, WebClient, CLIENT_EVENTS, RTM_EVENTS } = require('@slack/client');
+const appData = {};
 
 /**
- * This class wraps the logic for handling real time messaging (RTM) events
- * from the slack API. It also handles making calls to the slack API to fetch
- * the current user's presence and do not disturb (dnd) status.
+ * This class uses Slack's Real-time Messaging (RTM) API to listen
+ * for events. We want to listen for Slack presence change events,
+ * Slack message received events, and read marker update events.
+ * Given these events, the class will emit presence change or
+ * message received events. For more information go to
+ * http://slackapi.github.io/node-slack-sdk/rtm_api
  */
 class Slack {
-    /**
-     * Creates a new instance of the Slack wrapper class.
-     * The constructor expects a configuration object that
-     * specifies a Slack API Token, a Slack User Id, and a
-     * events bus.
-     * @param {*} config
-     */
-    constructor(config) {
+    constructor(config){
+        if (!config) {
+            throw 'Error: Configuration object required for constructor!';
+        }
+
         if (!config.apiToken) {
-            throw "No API token provided!";
+            throw 'Error: API Token required!';
         }
 
-        if (!config.user) {
-            throw "No User ID provided!";
+        if (!config.eventBus) {
+            throw 'Error: Event Bus required!';
         }
 
-        this.user = config.user;
-        this.rtmClient = new RtmClient(config.apiToken, {
-            logLevel: config.logLevel
+        const rtm = new RtmClient(config.apiToken, {
+            dataStore: false,
+            useRtmConnect: true
         });
+
         this.webClient = new WebClient(config.apiToken);
-        this.events = config.events;
-        this.updateStatus = config.updateStatus || false;
-
-        try {
-            this.rtmClient.start();
-        } catch (err) {
-            throw err;
-        }
-
-        this.fetchSlackPrenceAndDndInfo();
-        this.attachMessageHandlers();
-    }
-
-    asyncFetchSlackPresence() {
-        const getStatus = promisify(this.webClient.users.getPresence).bind(
-            this.webClient.users
-        );
-
-        return getStatus(this.user);
-    }
-
-    asyncFetchDnd() {
-        const getDnd = promisify(this.webClient.dnd.info).bind(
-            this.webClient.dnd
-        );
-
-        return getDnd(this.user);
+        this.rtmEvents(rtm, config.eventBus);
+        rtm.start({
+            batch_presence_away: true
+        });
     }
 
     /**
-     * Attaches events to the Real Time Messaging Events API for Slack.
+     * This function subscribes the instance to RTM events and
+     * emits presence changed and message received events appropriately.
      */
-    attachMessageHandlers() {
-        this.rtmClient.on(
-            RTM_EVENTS.MESSAGE,
-            this.handleMessageEvent.bind(this)
-        );
+    rtmEvents(rtm, eventBus) {
+      let self = this;
 
-        this.rtmClient.on(
-            RTM_EVENTS.MANUAL_PRESENCE_CHANGE,
-            this.handlePresenceChangeEvent.bind(this)
-        );
+        rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, (connectData) => {
+            console.log(connectData);
+            appData.selfId = connectData.self.id;
+            console.log(`Logged in as ${appData.selfId} of team ${connectData.team.id}`);
+        });
 
-        this.rtmClient.on(
-            RTM_EVENTS.DND_UPDATED,
-            this.handleDndUpdatedEvent.bind(this)
-        );
+        rtm.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, () => {
+            console.log("Subscribing presence");
+            rtm.subscribePresence([appData.selfId]);
+        });
 
-        this.rtmClient.on(
-            RTM_EVENTS.IM_MARKED,
-            this.handleImMarkedEvent.bind(this)
-        );
-
-        this.rtmClient.on(
-            RTM_EVENTS.CHANNEL_MARKED,
-            this.handleChannelMarkedEvent.bind(this)
-        );
-
-        this.rtmClient.on(
-            RTM_EVENTS.GROUP_MARKED,
-            this.handleGroupMarkedEvent.bind(this)
-        );
-    }
-
-    handleGroupMarkedEvent(slack) {
-        console.log('Handling group marked event!');
-        console.log(slack);
-
-        this.fetchSlackPrenceAndDndInfo();
-    }
-
-    /**
-     * Handles all message events. If the message is for the current user,
-     * then the luxafor is notified.
-     * @param {*} message
-     */
-    handleMessageEvent(message) {
-        console.log("Handling message event");
-        console.log(message);
-        if (message.user === this.user) {
-            return;
-        }
-
-        this.events.emit("slack-message-received", message);
-    }
-
-    /**
-     * Handles all presence change events. If the event's user is the current user,
-     * the presence and do not disturb status are checked and the luxafor is updated
-     * appropriately.
-     * @param {*} slack
-     */
-    handlePresenceChangeEvent(slack) {
-        console.log("Handling presence change event");
-        if (!slack.presence) {
-            // Throw an error here
-        }
-
-        this.events.emit("slack-presence-changed", slack.presence);
-        this.setStatus(slack.presence);
-    }
-
-    /**
-     * This function handles updates to do not disturb statuses.
-     * If the do not disturb status is active, then the luxafor is updated.
-     * If dnd is not active, then the luxafor's color is set based on presence.
-     * @param {*} slack
-     */
-    handleDndUpdatedEvent(slack) {
-        console.log("Handling DND update event");
-        console.log(slack);
-        this.fetchSlackPrenceAndDndInfo();
-    }
-
-    /**
-     * Handles when a message's read log is marked.
-     * @param {*} event
-     */
-    handleImMarkedEvent(event) {
-        console.log("Handling IM Marked Event");
-        console.log(event);
-        this.fetchSlackPrenceAndDndInfo();
-    }
-
-    /**
-     * Handles the event when a channel's read log is marked.
-     * @param {*} event
-     */
-    handleChannelMarkedEvent(event) {
-        console.log("Handling Channel Marked Event");
-        console.log(event);
-        this.fetchSlackPrenceAndDndInfo();
-    }
-
-    /**
-     * Checks the user's presence for away. If the user's presence is away, a presence changed
-     * event is emitted with presence away. If the presence is not away, the do not disturb
-     * info is queried. If do not disturb is enabled, then the slack-dnd-enabled event is
-     * emitted. Otherwise a presence change event is emitted with the active presence.
-     */
-    fetchSlackPrenceAndDndInfo() {
-        let self = this;
-
-        self.asyncFetchSlackPresence()
-            .then(slack => {
-                console.log(slack);
-                if (slack.presence === STATUS.away) {
-                    self.events.emit("slack-presence-changed", slack.presence);
-                    self.setStatus(STATUS.away)
-                } else {
-                    self.asyncFetchDnd()
-                        .then(slack => {
-                            console.log(slack);
-                            if (slack.dnd_enabled) {
-                                self.events.emit("slack-dnd-enabled");
-                                self.setStatus(STATUS.doNotDisturb);
-                            } else {
-                                self.events.emit("slack-presence-changed", STATUS.active);
-                                self.setStatus(STATUS.active);
-                            }
-                        });
-                }
-            })
-            
-    }
-
-    setStatus(status) {
-        console.log("Setting status", status);
-        let status_text = "";
-        let status_emoji = "";
-
-        if (!this.updateStatus) {
-            return;
-        }
-
-        if (status === STATUS.active) {
-            this.status = STATUS.active;
-            status_emoji = ":luxafor-avail:";
-        } else if (status === STATUS.away) {
-            this.status = STATUS.away;
-            status_emoji = ":luxafor-away:";
-        } else if (status === STATUS.doNotDisturb) {
-            this.status = STATUS.doNotDisturb;
-            status_emoji = ":luxafor-dnd:";
-        } else {
-            return;
-        }
-
-        this.webClient.users.profile.set({
-            user: this.user,
-            profile: {
-                status_text: status_text,
-                status_emoji: status_emoji
+        rtm.on(RTM_EVENTS.MESSAGE, (message) => {
+            console.log(message);
+            // Skip messages that are from a bot or my own user ID
+            if((message.subtype && message.subtype === 'bot_message') ||
+               (!message.subtype && message.user === appData.selfId)) {
+                return;
             }
+
+            eventBus.emit("message-received");
+        });
+
+        rtm.on(RTM_EVENTS.PRESENCE_CHANGE, (event) => {
+            console.log(event);
+            if (event.presence === "active") {
+                console.log("Emitting Available Presence");
+                eventBus.emit("presence-available");
+            } else if (event.presence === "away") {
+                console.log("Emitting away presence");
+                eventBus.emit("presence-away");
+            }
+        });
+
+        rtm.on(RTM_EVENTS.IM_MARKED, (event) => {
+            console.log(event);
+            // If we've read all our messages, then we are assumed available.
+            if (event.unread_count_display === 0) {
+                eventBus.emit("presence-available");
+            }
+        });
+
+        rtm.on(RTM_EVENTS.CHANNEL_MARKED, (event) => {
+            console.log(event);
+            eventBus.emit("presence-available");
+        });
+
+        rtm.on(RTM_EVENTS.GROUP_MARKED, (event) => {
+            console.log(event);
+            eventBus.emit("presence-available");
+        });
+
+        rtm.on(RTM_EVENTS.DND_UPDATED, (event) => {
+          console.log(event);
+          if (!event.dnd_status) {
+            return;
+          }
+
+          let slack = event.dnd_status;
+
+          if (slack.dnd_enabled) {
+            eventBus.emit("presence-dnd");
+          } else {
+            self.webClient.users.getPresence()
+              .then((slack) => {
+                console.log(slack);
+
+                if (slack.presence === 'away') {
+                  eventBus.emit("presence-away");
+                } else {
+                  eventBus.emit("presence-available");
+                }
+              })
+          }
         });
     }
 }

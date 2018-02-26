@@ -2,38 +2,42 @@ const path = require("path");
 const dotenv = require("dotenv").config({
     path: path.join(__dirname, "config/.env")
 });
-const { app, Menu, Tray } = require("electron");
+const { app } = require("electron");
+const EventBus = require("./modules/event-bus");
+const LuxIcon = require("./modules/lux-icon");
 const Luxa4Slack = require("./modules/luxa4slack");
+const LuxMenu = require("./modules/lux-menu");
 const Slack = require("./modules/slack");
-const Events = require("./modules/events");
+const SlackStatus = require("./modules/slack-status");
 
 let appIcon = null;
-let luxa4slack = null;
-let slack = null;
 let events = null;
+let luxa4slack = null;
+let menu = null;
+let slack = null;
+let slackStatus = null;
 
 app.on("ready", () => {
     try {
-        events = new Events();
-        appIcon = new Tray(Luxa4Slack.icons.available);
+        events = new EventBus();
+        appIcon = new LuxIcon(events);
+        menu = new LuxMenu(events);
 
-        const menu = Menu.buildFromTemplate([
-            {
-                label: "Close",
-                click: () => {
-                    events.emit("app-closed");
-                    app.quit();
-                }
-            }
-        ]);
+        events.on("app-closed", app.quit);
+        events.on("presence-available", () => {appIcon.setContextMenu(menu);});
+        events.on("presence-away", () => {appIcon.setContextMenu(menu);});
+        events.on("presence-dnd", () => {appIcon.setContextMenu(menu);});
         appIcon.setContextMenu(menu);
 
-        luxa4slack = new Luxa4Slack(appIcon, events);
+        luxa4slack = new Luxa4Slack(events);
         slack = new Slack({
             apiToken: process.env.SLACK_API_TOKEN,
-            user: process.env.SLACK_USER,
-            events: events,
+            eventBus: events,
             logLevel: process.env.RTM_LOG_LEVEL,
+        });
+        slackStatus = new SlackStatus({
+            apiToken: process.env.SLACK_API_TOKEN,
+            eventBus: events,
             updateStatus: process.env.UPDATE_STATUS
         });
     } catch (err) {
