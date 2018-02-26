@@ -1,4 +1,4 @@
-const { RtmClient, CLIENT_EVENTS, RTM_EVENTS } = require('@slack/client');
+const { RtmClient, WebClient, CLIENT_EVENTS, RTM_EVENTS } = require('@slack/client');
 const appData = {};
 
 /**
@@ -28,6 +28,7 @@ class Slack {
             useRtmConnect: true
         });
 
+        this.webClient = new WebClient(config.apiToken);
         this.rtmEvents(rtm, config.eventBus);
         rtm.start({
             batch_presence_away: true
@@ -39,6 +40,8 @@ class Slack {
      * emits presence changed and message received events appropriately.
      */
     rtmEvents(rtm, eventBus) {
+      let self = this;
+
         rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, (connectData) => {
             console.log(connectData);
             appData.selfId = connectData.self.id;
@@ -88,6 +91,30 @@ class Slack {
         rtm.on(RTM_EVENTS.GROUP_MARKED, (event) => {
             console.log(event);
             eventBus.emit("presence-available");
+        });
+
+        rtm.on(RTM_EVENTS.DND_UPDATED, (event) => {
+          console.log(event);
+          if (!event.dnd_status) {
+            return;
+          }
+
+          let slack = event.dnd_status;
+
+          if (slack.dnd_enabled) {
+            eventBus.emit("presence-dnd");
+          } else {
+            self.webClient.users.getPresence()
+              .then((slack) => {
+                console.log(slack);
+                
+                if (slack.presence === 'away') {
+                  eventBus.emit("presence-away");
+                } else {
+                  eventBus.emit("presence-available");
+                }
+              })
+          }
         });
     }
 }
