@@ -1,5 +1,23 @@
 const { RtmClient, WebClient, CLIENT_EVENTS, RTM_EVENTS } = require('@slack/client');
 const appData = {};
+const ignoredMessageSubtypes = [
+    'bot_message',
+    'channel_join',
+    'channel_archive',
+    'channel_leave',
+    'channel_purpose',
+    'channel_topic',
+    'channel_unarchive',
+    'group_archive',
+    'group_join',
+    'group_leave',
+    'group_name',
+    'group_purpose',
+    'group_topic',
+    'group_unarchive',
+    'message_deleted',
+    'unpinned_item'
+];
 
 /**
  * This class uses Slack's Real-time Messaging (RTM) API to listen
@@ -55,8 +73,7 @@ class Slack {
 
         rtm.on(RTM_EVENTS.MESSAGE, (message) => {
             console.log(message);
-            // Skip messages that are from a bot or my own user ID
-            if((message.subtype && message.subtype === 'bot_message') ||
+            if((message.subtype && ignoredMessageSubtypes.includes(message.subtype)) ||
                (!message.subtype && message.user === appData.selfId)) {
                 return;
             }
@@ -107,7 +124,7 @@ class Slack {
             self.webClient.users.getPresence()
               .then((slack) => {
                 console.log(slack);
-                
+
                 if (slack.presence === 'away') {
                   eventBus.emit("presence-away");
                 } else {
