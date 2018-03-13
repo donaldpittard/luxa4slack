@@ -7,45 +7,56 @@ const icons = {
     away: path.join(__dirname, "../icons/lux_away.png"),
     dnd: path.join(__dirname, "../icons/lux_dnd.png"),
     msg: path.join(__dirname, "../icons/lux_msg.png"),
-    off: path.join(__dirname, "../icons/lux_off.png")        
+    inactive: path.join(__dirname, "../icons/lux_off.png")
 };
 
-/** 
+/**
  * This class manages what icon will appear in the user's tray.
- * The class listens for presence change events and updates 
+ * The class listens for presence change events and updates
  * the tray icon image appropriately.
  */
 class LuxIcon extends Tray {
     constructor(eventBus){
-        super(icons.off);
+        super(icons.inactive);
         this.icons = icons;
-        this.setImage(this.icons.off);
-        this.events(eventBus);
+        this.eventBus = eventBus;
+        this.attachEventHandlers();
     }
 
     /**
-     * Given an event bus, this method subscribes the instance
-     * to presence change events.
-     * @param {*} eventBus 
+     * Given a presence string, this method returns the appropriate icon.
+     * @param string presence
      */
-    events(eventBus) {
-        let self = this;
+    getIconByPresence(presence='inactive') {
+        return icons[presence];
+    }
 
-        eventBus.on("presence-available", function() {
-            self.setImage(icons.available);
-        });
+    /**
+     * Given a new slack presence, this method changes the tray icon
+     * to the appropriate presence icon.
+     * @param string presence
+     */
+    handleSlackPresenceChange(presence) {
+        let icon = this.getIconByPresence(presence);
+        this.setImage(icon);
+    }
 
-        eventBus.on("presence-inactive", function() {
-            self.setImage(icons.off);
-        });
+    /**
+     * Event handler for menu click events. Sets the image
+     * of the tray to the appropriate presence representation.
+     * @param string menuItem
+     */
+    handleMenuClick(menuItem) {
+        let icon = this.getIconByPresence(menuItem);
+        this.setImage(icon);
+    }
 
-        eventBus.on("presence-away", function() {
-            self.setImage(icons.away);
-        });
-
-        eventBus.on("presence-dnd", function() {
-            self.setImage(self.icons.dnd);
-        });
+    /**
+     * Attaches event handleres to event bus.
+     */
+    attachEventHandlers() {
+        this.eventBus.on("slack-presence-change", this.handleSlackPresenceChange.bind(this));
+        this.eventBus.on("menu-click", this.handleMenuClick.bind(this));
     }
 }
 

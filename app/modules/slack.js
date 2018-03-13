@@ -61,18 +61,14 @@ class Slack {
       let self = this;
 
         rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, (connectData) => {
-            console.log(connectData);
             appData.selfId = connectData.self.id;
-            console.log(`Logged in as ${appData.selfId} of team ${connectData.team.id}`);
         });
 
         rtm.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, () => {
-            console.log("Subscribing presence");
             rtm.subscribePresence([appData.selfId]);
         });
 
         rtm.on(RTM_EVENTS.MESSAGE, (message) => {
-            console.log(message);
             if((message.subtype && ignoredMessageSubtypes.includes(message.subtype)) ||
                (!message.subtype && message.user === appData.selfId)) {
                 return;
@@ -82,56 +78,30 @@ class Slack {
         });
 
         rtm.on(RTM_EVENTS.PRESENCE_CHANGE, (event) => {
-            console.log(event);
             if (event.presence === "active") {
-                console.log("Emitting Available Presence");
-                eventBus.emit("presence-available");
+                eventBus.emit("slack-presence-change", "available");
             } else if (event.presence === "away") {
-                console.log("Emitting away presence");
-                eventBus.emit("presence-away");
+                eventBus.emit("slack-presence-change", "away");
             }
         });
 
         rtm.on(RTM_EVENTS.IM_MARKED, (event) => {
-            console.log(event);
-            // If we've read all our messages, then we are assumed available.
+            // If we've read all our messages, then send a message read event.
             if (event.unread_count_display === 0) {
-                eventBus.emit("presence-available");
+                eventBus.emit("message-read");
             }
         });
 
         rtm.on(RTM_EVENTS.CHANNEL_MARKED, (event) => {
-            console.log(event);
-            eventBus.emit("presence-available");
+            if (event.unread_count_display === 0) {
+                eventBus.emit("message-read");
+            }
         });
 
         rtm.on(RTM_EVENTS.GROUP_MARKED, (event) => {
-            console.log(event);
-            eventBus.emit("presence-available");
-        });
-
-        rtm.on(RTM_EVENTS.DND_UPDATED, (event) => {
-          console.log(event);
-          if (!event.dnd_status) {
-            return;
-          }
-
-          let slack = event.dnd_status;
-
-          if (slack.dnd_enabled) {
-            eventBus.emit("presence-dnd");
-          } else {
-            self.webClient.users.getPresence()
-              .then((slack) => {
-                console.log(slack);
-
-                if (slack.presence === 'away') {
-                  eventBus.emit("presence-away");
-                } else {
-                  eventBus.emit("presence-available");
-                }
-              })
-          }
+            if (event.unread_count_display === 0) {
+                eventBus.emit("message-read");
+            }
         });
     }
 }
