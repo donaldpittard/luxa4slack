@@ -59,6 +59,14 @@ class SlackStatus {
         this.webClient.users.profile.set({
             profile: presenceProfiles[menuItem]
         });
+
+        if (menuItem === "dnd") {
+            let minutes = 60;
+            let hours = 24;
+            this.webClient.dnd.setSnooze(minutes * hours);
+        } else {
+            this.webClient.dnd.endDnd();
+        }
     }
 
     /**
