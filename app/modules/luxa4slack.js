@@ -7,9 +7,16 @@ const Colors = {
     black: "#000000"
 };
 
+const PresenceColors = {
+    available: Colors.green,
+    away: Colors.yellow,
+    inactive: Colors.black,
+    dnd: Colors.red
+};
+
 /**
  * This class manages the luxafor color by wrapping the Luxafor API.
- * The object will subscribe to message received and presence changed 
+ * The object will subscribe to message received and presence changed
  * events. Based on these events, it will change the Luxafor color
  * appropriately. For more information on the Luxafor API go to
  * https://www.npmjs.com/package/luxafor-api
@@ -27,38 +34,54 @@ class Luxa4Slack extends Luxafor {
             throw "Error: No event bus passed!";
         }
 
+        this._dnd = false;
         this.fadeTo(Colors.black);
-        this.events(eventBus);
+        this.subscribeToEvents(eventBus);
     }
 
-    /** 
-     * This method subscribes the instance to message received, and 
+    /**
+     * This method subscribes the instance to message received, and
      * presence changed events in order to change the Luxafor color.
      */
-    events(eventBus){
-        let self = this;
-        eventBus.on("app-closed", () => self.fadeTo(Colors.black));
+    subscribeToEvents(eventBus){
+        eventBus.on("app-closed", () => this.fadeTo(Colors.black));
+        eventBus.on("message-received", this.handleMessageReceived.bind(this));
+        eventBus.on("message-read", this.handleMessageRead.bind(this));
+        eventBus.on("slack-presence-change", this.handleSlackPresenceChange.bind(this));
+        eventBus.on("menu-click", this.handleMenuClick.bind(this));
+    }
 
-        eventBus.on("message-received", () => {
-            self.setColor(Colors.blue);
-            self.flash(Colors.blue, 255, 10, 5);
-        });
+    handleMessageReceived() {
+        if (this._dnd) {
+            return;
+        }
 
-        eventBus.on("presence-available", () => {
-            self.fadeTo(Colors.green);
-        });
+        if (!this._previousColor) {
+            this._previousColor = this._currentColor;
+        }
 
-        eventBus.on("presence-away", () => {
-            self.fadeTo(Colors.yellow);
-        });
+        this.fadeTo(Colors.blue);
+    }
 
-        eventBus.on("presence-dnd", () => {
-            self.fadeTo(Colors.red);
-        });
+    handleMessageRead() {
+        if (this._previousColor) {
+            this._currentColor = this._previousColor;
+            this._previousColor = null;
+            this.fadeTo(this._currentColor);
+        }
+    }
 
-        eventBus.on("presence-inactive", () => {
-            self.fadeTo(Colors.black);
-        });
+    handleMenuClick(presence="inactive") {
+        let color = PresenceColors[presence];
+        this._currentColor = color;
+        this.fadeTo(color);
+        this._dnd = (presence === "dnd");
+    }
+
+    handleSlackPresenceChange(presence="inactive") {
+        let color = PresenceColors[presence];
+        this._currentColor = color;
+        this.fadeTo(color);
     }
 }
 
