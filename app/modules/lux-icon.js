@@ -21,6 +21,7 @@ class LuxIcon extends Tray {
         this.icons = icons;
         this.eventBus = eventBus;
         this.attachEventHandlers();
+        this.setToolTip('Luxafor Control');
     }
 
     /**
