@@ -19,6 +19,10 @@ const presenceProfiles = {
     }
 };
 
+const MINUTES_IN_HOUR = 60;
+const HOURS_IN_DAY = 24;
+const SNOOZE_TIME = MINUTES_IN_HOUR * HOURS_IN_DAY;
+
 /**
  * This class uses the Slack WebClient API to update the user's
  * status_text and status emoji on presence change events. For
@@ -47,9 +51,9 @@ class SlackStatus {
         });
 
         if (presence === "dnd") {
-            let minutes = 60;
-            let hours = 24;
-            this.webClient.dnd.setSnooze(minutes * hours);
+            this.webClient.dnd.setSnooze({
+                num_minutes: SNOOZE_TIME
+            });
         } else {
             this.webClient.dnd.endDnd();
         }
@@ -61,9 +65,9 @@ class SlackStatus {
         });
 
         if (menuItem === "dnd") {
-            let minutes = 60;
-            let hours = 24;
-            this.webClient.dnd.setSnooze(minutes * hours);
+            this.webClient.dnd.setSnooze({
+                num_minutes: SNOOZE_TIME
+            });
         } else {
             this.webClient.dnd.endDnd();
         }

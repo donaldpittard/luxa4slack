@@ -1,4 +1,4 @@
-const { RtmClient, WebClient, CLIENT_EVENTS, RTM_EVENTS } = require('@slack/client');
+const { RTMClient, WebClient } = require('@slack/client');
 const appData = {};
 const ignoredMessageSubtypes = [
     'bot_message',
@@ -41,7 +41,7 @@ class Slack {
             throw 'Error: Event Bus required!';
         }
 
-        const rtm = new RtmClient(config.apiToken, {
+        const rtm = new RTMClient(config.apiToken, {
             dataStore: false,
             useRtmConnect: true
         });
@@ -60,15 +60,15 @@ class Slack {
     rtmEvents(rtm, eventBus) {
       let self = this;
 
-        rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, (connectData) => {
+        rtm.on('authenticated', (connectData) => {
             appData.selfId = connectData.self.id;
         });
 
-        rtm.on(CLIENT_EVENTS.RTM.RTM_CONNECTION_OPENED, () => {
+        rtm.on('connected', () => {
             rtm.subscribePresence([appData.selfId]);
         });
 
-        rtm.on(RTM_EVENTS.MESSAGE, (message) => {
+        rtm.on('message', (message) => {
             if((message.subtype && ignoredMessageSubtypes.includes(message.subtype)) ||
                (!message.subtype && message.user === appData.selfId)) {
                 return;
@@ -77,7 +77,7 @@ class Slack {
             eventBus.emit("message-received");
         });
 
-        rtm.on(RTM_EVENTS.PRESENCE_CHANGE, (event) => {
+        rtm.on('presence_change', (event) => {
             if (event.presence === "active") {
                 eventBus.emit("slack-presence-change", "available");
             } else if (event.presence === "away") {
@@ -85,20 +85,20 @@ class Slack {
             }
         });
 
-        rtm.on(RTM_EVENTS.IM_MARKED, (event) => {
+        rtm.on('im_marked', (event) => {
             // If we've read all our messages, then send a message read event.
             if (event.unread_count_display === 0) {
                 eventBus.emit("message-read");
             }
         });
 
-        rtm.on(RTM_EVENTS.CHANNEL_MARKED, (event) => {
+        rtm.on('channel_marked', (event) => {
             if (event.unread_count_display === 0) {
                 eventBus.emit("message-read");
             }
         });
 
-        rtm.on(RTM_EVENTS.GROUP_MARKED, (event) => {
+        rtm.on('group_marked', (event) => {
             if (event.unread_count_display === 0) {
                 eventBus.emit("message-read");
             }
