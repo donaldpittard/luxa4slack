@@ -5,7 +5,9 @@
   "main": "app/main.js",
   "scripts": {
     "test": "Test not implemented",
-    "postinstall": "electron-rebuild -f -w node-hid"
+    "postinstall": "electron-rebuild -f -w node-hid",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "author": "Donald Pittard <allenp@inmotionhosting.com>",
   "license": "ISC",
@@ -16,7 +18,8 @@
     "https-proxy-agent": "^2.2.1",
     "luxafor-api": "latest",
     "node-hid": "^0.7.3",
-    "promisify-node": "^0.4.0"
+    "promisify-node": "^0.4.0",
+    "snyk": "^1.167.2"
   },
   "devDependencies": {
     "electron-rebuild": "^1.8.2"
@@ -32,5 +35,6 @@
   "bugs": {
     "url": "https://github.com/donaldpittard/luxa4slack/issues"
   },
-  "homepage": "https://github.com/donaldpittard/luxa4slack#readme"
+  "homepage": "https://github.com/donaldpittard/luxa4slack#readme",
+  "snyk": true
 }
