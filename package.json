@@ -13,7 +13,7 @@
     "@slack/client": "^4.4.0",
     "dotenv": "^4.0.0",
     "electron": "^2.0.7",
-    "https-proxy-agent": "^2.2.1",
+    "https-proxy-agent": "^3.0.0",
     "luxafor-api": "latest",
     "node-hid": "^0.7.3",
     "promisify-node": "^0.4.0"
